@@ -120,6 +120,10 @@ asynk.add(f300ms).args([0,asynk.callback])
 	.add(f200ms).args([asynk.data(-3),asynk.callback])
 	.parallel(check,['data order in parallel',asynk.data('all'),[0,0,1,1,0]]);
 
+asynk.each([0,1,2],f300ms).args([asynk.item,asynk.callback])
+	.each([0,1,2],f100ms).args([asynk.item,asynk.callback])
+	.each([0,1,2],f200ms).args([asynk.item,asynk.callback])
+	.parallel(check,['each in parallel',asynk.data('all'),[0,1,2,0,1,2,0,1,2]]);
 
 //log.info('Passed '+passed);
 //log.warn('Error: '+error);

@@ -63,6 +63,10 @@ Task.prototype.execute = function(){
 				case 'callback':
 					self.args[index] = self.callback;
 					break;
+
+				case 'item':
+					self.args[index] = self.item;
+					break;
 			}
 		}
 	});
@@ -109,20 +113,57 @@ var Asynk = function(){
 	this.tasks = [];
 	this.aliasMap = [];
 	this.results = [];
+	this.currentTasks = [];
 };
 
 Asynk.prototype.add = function(fct){
-	var nextId = this.tasks.length;
-	this.tasks[nextId] = new Task(this,nextId,fct);
+	var newId = this.tasks.length;
+	this.tasks[newId] = new Task(this,newId,fct);
+	this.currentTasks = [newId];
+	return this;
+};
+
+Asynk.prototype.each = function(datas,fct){
+	var self = this;
+	datas.forEach(function(data){
+		var newId = self.tasks.length;
+		self.tasks[newId] = new Task(self,newId,fct);
+		self.tasks[newId].item = data;
+		self.currentTasks.push(newId);		
+	});
 	return this;
 };
 
 Asynk.prototype.args = function(args){
 	var self = this;
-    var current = this.tasks[this.tasks.length - 1];
-	current.args = args;
+	this.currentTasks.forEach(function(currentTask){
+    	self.tasks[currentTask].args = _.clone(args);
+	});
 	return this;
 };
+
+Asynk.prototype.require = function(dependency){
+	var self = this;
+	this.currentTasks.forEach(function(currentTask){
+		var current = self.tasks[currentTask];
+		current.dependencies.push(dependency);
+	});
+	return this;
+};
+
+Asynk.prototype.alias = function(alias){
+	if (_.isString(alias)) {
+		var self = this;
+		this.currentTasks.forEach(function(currentTask,index){
+			if (self.currentTasks.length > 1){
+				alias += index;
+			}
+			self.tasks[currentTask].alias = alias;
+			self.aliasMap[alias] = currentTask;
+		});
+	}
+	return this;
+}
 
 Asynk.prototype.serie = function(endcall,endcallArgs){
 	var self = this;
@@ -200,7 +241,6 @@ Asynk.prototype.parallelLimited = function(limit,endcall,endcallArgs){
 	var count = 0;
 	var todo = self.tasks.length;
 	var cb = function(task,err,data){
-		console.log('done!');
 		task.status = 'done';
 		if (!err) {
 			self.results[task.id] = data;
@@ -244,24 +284,12 @@ Asynk.prototype.parallelLimited = function(limit,endcall,endcallArgs){
 	return this;
 };
 
-Asynk.prototype.require = function(dependency){
-	var current = this.tasks[this.tasks.length - 1];
-	current.dependencies.push(dependency);
-	return this;
-};
-
-Asynk.prototype.alias = function(alias){
-	if (_.isString(alias)) {
-		var currentId = this.tasks.length - 1;
-		this.tasks[currentId].alias = alias;
-		this.aliasMap[alias] = currentId;
-	}
-	return this;
-}
-
 module.exports = {
 	add: function(fct){
 		return new Asynk().add(fct);
+	},
+	each: function(datas,fct){
+		return new Asynk().each(datas,fct);
 	},
 	callback:  new DefArg('callback'),
 	data: function(val){
@@ -271,7 +299,8 @@ module.exports = {
 		else {
 			return new DefArg('order',val);
 		}
-	}
+	},
+	item: new DefArg('item')
 };
 
 

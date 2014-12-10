@@ -1,0 +1,33 @@
+{
+  "name": "asynk",
+  "version": "0.0.1",
+  "description": "flow control library for javascript",
+  "main": "asynk.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atiertant/asynk.git"
+  },
+  "keywords": [
+    "asynchronous",
+    "asynk",
+    "async"
+  ],
+  "author": {
+    "name": "Alexandre Tiertant"
+  },
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "underscore" : ">= 1.7.0"
+  },
+  "devDependencies": {
+  },
+  "readme": "flow control library for javascript",
+  "bugs": {
+    "url": "https://github.com/atiertant/asynk/issues"
+  }
+}
+

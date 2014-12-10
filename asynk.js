@@ -9,7 +9,7 @@ var Task = function(parentStack,id,fct){
 	var self = this;
 	this.parentStack = parentStack;
 	this.id = id;
-	this.name = null;
+	this.alias = null;
 	this.fct = fct;
 	this.args = [];
 	this.dependencies = [];
@@ -52,10 +52,14 @@ Task.prototype.execute = function(){
 					}
 					break;
 
-				case 'results':
-					self.args[index] = self.parentStack.results;
+				case 'alias':
+					if (arg.value === 'all') {
+						self.args[index] = self.parentStack.results;
+					}
+					else {
+						self.args[index] = self.parentStack.results[self.parentStack.aliasMap[arg.value]];
+					}
 					break;
-
 				case 'callback':
 					self.args[index] = self.callback;
 					break;
@@ -75,6 +79,11 @@ Task.prototype.fail = function(err){
 Task.prototype.checkDependencies = function(){
 	for (key in this.dependencies){
 		var id = this.dependencies[key];
+
+		if (_.isString(id)) {
+			id = this.parentStack.aliasMap[id];
+		}
+
 		if (_.isUndefined(this.parentStack.results[id])){
 			return false;
 		}
@@ -98,6 +107,7 @@ var DefArg = function(type,val){
 var Asynk = function(){
     var self = this;
 	this.tasks = [];
+	this.aliasMap = [];
 	this.results = [];
 };
 
@@ -149,7 +159,7 @@ Asynk.prototype.parallel = function(endcall,endcallArgs){
 	var count = 0;
 	var todo = self.tasks.length;
 	var cb = function(task,err,data){
-		this.status = 'done';
+		task.status = 'done';
 		if (!err) {
 			self.results[task.id] = data;
 			count++;
@@ -182,24 +192,84 @@ Asynk.prototype.parallel = function(endcall,endcallArgs){
 	return this;
 };
 
+Asynk.prototype.parallelLimited = function(limit,endcall,endcallArgs){
+	var self = this;
+	var endTask = new Task(this,'end',endcall);
+	endTask.args = endcallArgs || this.results;
+
+	var count = 0;
+	var todo = self.tasks.length;
+	var cb = function(task,err,data){
+		console.log('done!');
+		task.status = 'done';
+		if (!err) {
+			self.results[task.id] = data;
+			count++;
+			if (count >= todo) {
+				endTask.execute();
+			}
+			else {
+				self.tasks.forEach(function(task) {
+					var stats = _.countBy(self.tasks, function(task) {
+  						return task.status;
+					});
+					var running = stats.running || 0;
+					if ((running < limit) && (task.status !== 'done') && (task.status !== 'running') && (task.status !== 'fail')) {
+						task.execute();
+					}
+				});
+			}
+		}
+		else {
+			endTask.fail(err);
+		}
+	};
+
+	this.tasks.forEach(function(task) {
+		task.setCallback(function(err,data){
+			cb(task,err,data);
+		});
+	});
+
+	this.tasks.forEach(function(task) {
+		var stats = _.countBy(self.tasks, function(task) {
+  			return task.status;
+		});
+		var running = stats.running || 0;
+		if ((running < limit) && (task.status !== 'done') && (task.status !== 'running') && (task.status !== 'fail')) {
+			task.execute();
+		}
+	});
+
+	return this;
+};
+
 Asynk.prototype.require = function(dependency){
 	var current = this.tasks[this.tasks.length - 1];
 	current.dependencies.push(dependency);
 	return this;
 };
 
+Asynk.prototype.alias = function(alias){
+	if (_.isString(alias)) {
+		var currentId = this.tasks.length - 1;
+		this.tasks[currentId].alias = alias;
+		this.aliasMap[alias] = currentId;
+	}
+	return this;
+}
 
 module.exports = {
 	add: function(fct){
 		return new Asynk().add(fct);
 	},
-	callback:  new DefArg("callback"),
+	callback:  new DefArg('callback'),
 	data: function(val){
-		if (val === 'all') {
-			return new DefArg("results","all");
+		if (_.isString(val)) {
+			return new DefArg('alias',val);
 		}
 		else {
-			return new DefArg("order",val);
+			return new DefArg('order',val);
 		}
 	}
 };

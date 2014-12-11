@@ -101,11 +101,16 @@ when every task are finnished,the function passed to parallelLimited is called w
 ## Asynchronous data between task
 
 ```javascript
+//create a first task
 asynk.add(my_function).args(0,asynk.callback)
-	.add(my_function).args(asynk.data(0),asynk.callback)		//absolute position task data (here first one)
-	.add(my_function).args(asynk.data(-1),asynk.callback)		//relative position task data (here the second one)
-	.add(my_function).args(0,asynk.callback).alias('here')		//assinging an alias name to this task
-	.add(my_function).args(asynk.data('here'),asynk.callback)	//alias name task data (here the fourth)
+	//absolute position task data (here first one)
+	.add(my_function).args(asynk.data(0),asynk.callback)
+	//relative position task data (here the second one)
+	.add(my_function).args(asynk.data(-1),asynk.callback)
+	//assinging an alias name to this task
+	.add(my_function).args(0,asynk.callback).alias('here')
+	//alias name task data (here the fourth)
+	.add(my_function).args(asynk.data('here'),asynk.callback)
 	//...
 ```
 asynk.data can take arguments like:
@@ -122,11 +127,16 @@ require(dependency)
 require function make task waiting an other one to finish before start.
 
 ```javascript
+//create a first task
 asynk.add(my_function0).args(0,asynk.callback)
-	.add(my_function1).args(4,asynk.callback).require('here')	//alias name task requirement (here the fifth)
-	.add(my_function2).args(1,asynk.callback).require(4)		//absolute position task requirement (here the fifth)
-	.add(my_function3).args(2,asynk.callback).require(-1)		//relative position task requirement (here the third)
-	.add(my_function4).args(3,asynk.callback).alias('here')		//assinging an alias name to this task
+	//alias name task requirement (here the fifth)
+	.add(my_function1).args(4,asynk.callback).require('here')
+	//absolute position task requirement (here the fifth)
+	.add(my_function2).args(1,asynk.callback).require(4)
+	//relative position task requirement (here the third)		
+	.add(my_function3).args(2,asynk.callback).require(-1)
+	//assinging an alias name to this task
+	.add(my_function4).args(3,asynk.callback).alias('here')
 	//...
 ```
 

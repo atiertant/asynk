@@ -15,20 +15,19 @@
     "asynk",
     "async"
   ],
-  "author": {
-    "name": "Alexandre Tiertant"
-  },
+  "author": "Alexandre Tiertant",
   "license": "MIT",
-  "readmeFilename": "README.md",
   "dependencies": {
-    "underscore" : ">=1.7.0"
+    "underscore": ">=1.7.0"
   },
   "devDependencies": {
     "colors": ">=1.0.3"
   },
-  "readme": "flow control library for javascript",
   "bugs": {
     "url": "https://github.com/atiertant/asynk/issues"
+  },
+  "homepage": "https://github.com/atiertant/asynk",
+  "directories": {
+    "test": "test"
   }
 }
-

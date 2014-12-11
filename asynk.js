@@ -134,7 +134,8 @@ Asynk.prototype.each = function(datas,fct){
 	return this;
 };
 
-Asynk.prototype.args = function(args){
+Asynk.prototype.args = function(){
+	args = _.toArray(arguments);
 	var self = this;
 	this.currentTasks.forEach(function(currentTask){
     	self.tasks[currentTask].args = _.clone(args);

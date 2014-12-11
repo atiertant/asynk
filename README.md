@@ -6,7 +6,7 @@ Asynk is small tool for javascript asynchronous task management.
 
 ```javascript
 asynk.add(fs.open).args('./TEST.txt','w',asynk.callback)
-	.add(fs.write).args(asynk.data(-1),new Buffer('hello world'),0,11,null,asynk.callback)
+	.add(fs.write).args(asynk.data(0),new Buffer('hello world'),0,11,null,asynk.callback)
 	.add(fs.close).args(asynk.data(-2),asynk.callback)
 	.add(fs.readFile).args('./TEST.txt', "utf8",asynk.callback).alias('content')
 	.serie(console.log,[asynk.data('content')]);
@@ -49,6 +49,11 @@ asynk.add(my_function).args(0,asynk.callback)
 	.add(my_function).args(1,asynk.callback)
 	.add(my_function).args(2,asynk.callback) //...
 ```
+## Args
+args(arg1,arg2,...)
+
+the args function define arguments of function passed to the task.
+simply pass arguments like executing the function and replace the callback function by *asynk.callback* 
 
 ## Execute them
 
@@ -105,13 +110,14 @@ asynk.add(my_function).args(0,asynk.callback)
 ```
 asynk.data can take arguments like:
 
--positive number: return the value of task by absolute order of insertion starting by 0 (so 0 is the first,1 is the second...)
--negative number: return the value of task in a relative position (-1 is the first previous one)
--string: return the value of task named by alias(string) function
+* **positive number:** return the value of task by absolute order of insertion starting by 0 (so 0 is the first,1 is the second...)
+* **negative number:** return the value of task in a relative position (-1 is the first previous one)
+* **string:** return the value of task named by alias(string) function
 
 ## Advanced Task Functionality
 
 ### Require
+require(dependency)
 
 require function make task waiting an other one to finish before start.
 
@@ -129,6 +135,6 @@ and so on my_function2's end,my_function3 will be execute.
 
 require can take arguments like:
 
--positive number: return the value of task by absolute order of insertion starting by 0 (so 0 is the first,1 is the second...)
--negative number: return the value of task in a relative position (-1 is the first previous one)
--string: return the value of task named by alias(string) function
+* **positive number:** require a selected task by absolute order of insertion starting by 0 (so 0 is the first,1 is the second...).
+* **negative number:** require a selected task by a relative position (-1 is the first previous one).
+* **string:** require a selected task named by alias(string) function.

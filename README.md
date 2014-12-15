@@ -26,7 +26,7 @@ $ npm install asynk
 
 ## Adding Task
 
-Asynk command must start be adding one or more task using functions: 
+Asynk command **must** start by adding one or more task using functions: 
 
 ### Add
 

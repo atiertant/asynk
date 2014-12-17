@@ -1,6 +1,8 @@
-# Asynk.js
+![asynk.js](http://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Break_dance.svg/512px-Break_dance.svg.png)Asynk.js
+--------
 
-Asynk is small tool for javascript asynchronous task management.
+Asynk is a small tool for javascript asynchronous task management.
+
 
 ## Example
 
@@ -194,3 +196,64 @@ asynk.each([0,0,0,0],my_function).args(asynk.item,asynk.callback)
 
 here my_function is called four time with 0 as argument but two time before and one time after a callback is called until all four tasks are done.
 when every task are finnished,the function passed to parallelLimited is called with args arguments array.
+
+## Stacks
+
+### Fifo
+first pushed function are first executed
+
+create a fifo stack object:
+```javascript
+var fifo = asynk.fifo();
+```
+*push(fct)*
+arguments:
+* fct: a function
+
+return a function that take fct arguments as arguments
+
+```javascript
+var result = '';
+var fifo = asynk.fifo();
+var f1 = fifo.push(function(err,data){result += data;});
+var f2 = fifo.push(function(err,data){result += data;});
+var f3 = fifo.push(function(err,data){result += data;});
+var f4 = fifo.push(function(err,data){result += data;});
+var f5 = fifo.push(function(err,data){result += data;});
+var f6 = fifo.push(function(err,data){result += data;});
+f6(null,6);
+f2(null,2);
+f4(null,4);
+f1(null,1);
+f3(null,3);
+f5(null,5);
+console.log(result); //123456
+```
+
+### Progressive
+function are executed in a predefined order
+
+create a progressive stack object:
+```javascript
+var progr = asynk.progressive(start,step);
+```
+arguments:
+* start: a number (first order to execute) default value is 1
+* step: a number (step between order) default value is 1
+
+*push(order,fct)*
+arguments:
+* order: a number
+* fct: a function
+
+```javascript
+var result = '';
+var progr = asynk.progressive();
+progr.push(6,function(err,data){result += data;})(null,6);
+progr.push(2,function(err,data){result += data;})(null,2);
+progr.push(4,function(err,data){result += data;})(null,4);
+progr.push(1,function(err,data){result += data;})(null,1);
+progr.push(3,function(err,data){result += data;})(null,3);
+progr.push(5,function(err,data){result += data;})(null,5);
+console.log(result); //123456
+```

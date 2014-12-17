@@ -138,3 +138,32 @@ asynk.each([0,1,2],f300ms).args(asynk.item,asynk.callback)
 	.each([0,1,2],f100ms).args(asynk.item,asynk.callback)
 	.each([0,1,2],f200ms).args(asynk.item,asynk.callback)
 	.parallel(check,['each in parallel',asynk.data('all'),[0,1,2,0,1,2,0,1,2]]);
+
+count++; //fifo
+var fifo = asynk.fifo();
+var result = '';
+var f1 = fifo.push(function(err,data){result += data;});
+var f2 = fifo.push(function(err,data){result += data;});
+var f3 = fifo.push(function(err,data){result += data;});
+var f4 = fifo.push(function(err,data){result += data;});
+var f5 = fifo.push(function(err,data){result += data;});
+var f6 = fifo.push(function(err,data){result += data;});
+f6(null,6);
+f2(null,2);
+f4(null,4);
+f1(null,1);
+f3(null,3);
+f5(null,5);
+check('fifo',[result],['123456']);
+
+
+count++; //progressive
+var progr = asynk.progressive();
+var result = '';
+progr.push(6,function(err,data){result += data;})(null,6);
+progr.push(2,function(err,data){result += data;})(null,2);
+progr.push(4,function(err,data){result += data;})(null,4);
+progr.push(1,function(err,data){result += data;})(null,1);
+progr.push(3,function(err,data){result += data;})(null,3);
+progr.push(5,function(err,data){result += data;})(null,5);
+check('progressive',[result],['123456']);

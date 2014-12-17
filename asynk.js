@@ -323,7 +323,7 @@ Asynk.prototype.parallelLimited = function(limit, endcall, endcallArgs) {
     var count = 0;
     var todo = self.tasks.length;
     var cb = function(task, err, data) {
-        task.status = 'done';
+        task.status = DONE;
         if (!err) {
             self.results[task.id] = data;
             count++;

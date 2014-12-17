@@ -296,7 +296,12 @@ Asynk.prototype.parallel = function(endcall, endcallArgs) {
             endTask.fail(err);
         }
     };
-
+    
+    if (this.tasks.length === 0){
+        endTask.execute();
+        return this;
+    }
+    
     this.tasks.forEach(function(task) {
         task.setCallback(function(err, data) {
             cb(task, err, data);
@@ -341,6 +346,11 @@ Asynk.prototype.parallelLimited = function(limit, endcall, endcallArgs) {
             endTask.fail(err);
         }
     };
+
+    if (this.tasks.length === 0){
+        endTask.execute();
+        return this;
+    }
 
     this.tasks.forEach(function(task) {
         task.setCallback(function(err, data) {

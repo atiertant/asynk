@@ -201,6 +201,7 @@ Asynk.prototype.add = function(fct) {
 
 Asynk.prototype.each = function(datas, fct) {
     var self = this;
+    self.currentTasks = [];
     datas.forEach(function(data) {
         var newId = self.tasks.length;
         self.tasks[newId] = new Task(self, newId, fct);

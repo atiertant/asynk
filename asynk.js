@@ -193,6 +193,9 @@ var Asynk = function() {
 };
 
 Asynk.prototype.add = function(fct) {
+    if ( _.isUndefined(fct) || !_.isFunction(fct) ) {
+        throw new Error('Asynk add require a function as argument');
+    }
     var newId = this.tasks.length;
     this.tasks[newId] = new Task(this, newId, fct);
     this.currentTasks = [newId];
@@ -200,6 +203,9 @@ Asynk.prototype.add = function(fct) {
 };
 
 Asynk.prototype.each = function(datas, fct) {
+    if ( _.isUndefined(fct) || !_.isFunction(fct) ) {
+        throw new Error('Asynk each require a function as second argument');
+    }
     var self = this;
     self.currentTasks = [];
     datas.forEach(function(data) {

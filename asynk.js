@@ -250,6 +250,9 @@ Asynk.prototype.alias = function(alias) {
 };
 
 Asynk.prototype.serie = function(endcall, endcallArgs) {
+    if ( _.isUndefined(endcall) || !_.isFunction(endcall) ) {
+        throw new Error('Asynk serie require a function as first argument');
+    }
     var self = this;
     var endTask = new Task(this, 'end', endcall);
     endTask.args = endcallArgs || this.results;
@@ -277,6 +280,9 @@ Asynk.prototype.serie = function(endcall, endcallArgs) {
 };
 
 Asynk.prototype.parallel = function(endcall, endcallArgs) {
+    if ( _.isUndefined(endcall) || !_.isFunction(endcall) ) {
+        throw new Error('Asynk parallel require a function as first argument');
+    }
     var self = this;
     var endTask = new Task(this, 'end', endcall);
     endTask.args = endcallArgs || this.results;
@@ -323,6 +329,9 @@ Asynk.prototype.parallel = function(endcall, endcallArgs) {
 };
 
 Asynk.prototype.parallelLimited = function(limit, endcall, endcallArgs) {
+    if ( _.isUndefined(endcall) || !_.isFunction(endcall) ) {
+        throw new Error('Asynk parallelLimited require a function as second argument');
+    }
     var self = this;
     var endTask = new Task(this, 'end', endcall);
     endTask.args = endcallArgs || this.results;

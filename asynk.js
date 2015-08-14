@@ -252,14 +252,7 @@ Asynk.prototype.alias = function(alias) {
     return this;
 };
 
-<<<<<<< HEAD
 Asynk.prototype.serie = function(endcallArgs) {
-=======
-Asynk.prototype.serie = function(endcall, endcallArgs) {
-    if ( _.isUndefined(endcall) || !_.isFunction(endcall) ) {
-        throw new Error('Asynk serie require a function as first argument');
-    }
->>>>>>> cc111dfa2edd129de44c0290d77fabbfe19484e1
     var self = this;
     var defer = new Deferred();
     var endTask = new Task(this, 'end', defer.resolve.bind(defer));
@@ -288,14 +281,7 @@ Asynk.prototype.serie = function(endcall, endcallArgs) {
     return defer.promise();
 };
 
-<<<<<<< HEAD
 Asynk.prototype.parallel = function(endcallArgs) {
-=======
-Asynk.prototype.parallel = function(endcall, endcallArgs) {
-    if ( _.isUndefined(endcall) || !_.isFunction(endcall) ) {
-        throw new Error('Asynk parallel require a function as first argument');
-    }
->>>>>>> cc111dfa2edd129de44c0290d77fabbfe19484e1
     var self = this;
     var defer = new Deferred();
     var endTask = new Task(this, 'end', defer.resolve.bind(defer));

@@ -194,6 +194,9 @@ var Asynk = function() {
 };
 
 Asynk.prototype.add = function(fct) {
+    if ( _.isUndefined(fct) || !_.isFunction(fct) ) {
+        throw new Error('Asynk add require a function as argument');
+    }
     var newId = this.tasks.length;
     this.tasks[newId] = new Task(this, newId, fct);
     this.currentTasks = [newId];
@@ -202,6 +205,9 @@ Asynk.prototype.add = function(fct) {
 };
 
 Asynk.prototype.each = function(datas, fct) {
+    if ( _.isUndefined(fct) || !_.isFunction(fct) ) {
+        throw new Error('Asynk each require a function as second argument');
+    }
     var self = this;
     self.currentTasks = [];
     datas.forEach(function(data) {
@@ -246,7 +252,14 @@ Asynk.prototype.alias = function(alias) {
     return this;
 };
 
+<<<<<<< HEAD
 Asynk.prototype.serie = function(endcallArgs) {
+=======
+Asynk.prototype.serie = function(endcall, endcallArgs) {
+    if ( _.isUndefined(endcall) || !_.isFunction(endcall) ) {
+        throw new Error('Asynk serie require a function as first argument');
+    }
+>>>>>>> cc111dfa2edd129de44c0290d77fabbfe19484e1
     var self = this;
     var defer = new Deferred();
     var endTask = new Task(this, 'end', defer.resolve.bind(defer));
@@ -275,7 +288,14 @@ Asynk.prototype.serie = function(endcallArgs) {
     return defer.promise();
 };
 
+<<<<<<< HEAD
 Asynk.prototype.parallel = function(endcallArgs) {
+=======
+Asynk.prototype.parallel = function(endcall, endcallArgs) {
+    if ( _.isUndefined(endcall) || !_.isFunction(endcall) ) {
+        throw new Error('Asynk parallel require a function as first argument');
+    }
+>>>>>>> cc111dfa2edd129de44c0290d77fabbfe19484e1
     var self = this;
     var defer = new Deferred();
     var endTask = new Task(this, 'end', defer.resolve.bind(defer));

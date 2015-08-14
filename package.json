@@ -21,7 +21,7 @@
     "underscore": ">=1.7.0"
   },
   "devDependencies": {
-    "colors": ">=1.0.3"
+    "mocha": ">=2.2.5"
   },
   "bugs": {
     "url": "https://github.com/atiertant/asynk/issues"

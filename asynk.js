@@ -1,4 +1,5 @@
 var _ = require('underscore');
+var Deferred = require('./lib/deferred');
 
 /********************************************************************************/
 /* Static state of task                                                         */
@@ -196,6 +197,7 @@ Asynk.prototype.add = function(fct) {
     var newId = this.tasks.length;
     this.tasks[newId] = new Task(this, newId, fct);
     this.currentTasks = [newId];
+    this.args(new DefArg('callback'));
     return this;
 };
 
@@ -208,6 +210,7 @@ Asynk.prototype.each = function(datas, fct) {
         self.tasks[newId].item = data;
         self.currentTasks.push(newId);
     });
+    this.args(new DefArg('item'),new DefArg('callback'));
     return this;
 };
 
@@ -243,16 +246,18 @@ Asynk.prototype.alias = function(alias) {
     return this;
 };
 
-Asynk.prototype.serie = function(endcall, endcallArgs) {
+Asynk.prototype.serie = function(endcallArgs) {
     var self = this;
-    var endTask = new Task(this, 'end', endcall);
-    endTask.args = endcallArgs || this.results;
+    var defer = new Deferred();
+    var endTask = new Task(this, 'end', defer.resolve.bind(defer));
+    endTask.args = endcallArgs || [new DefArg('alias', 'all')];
     var cb = function(err, data) {
         if (!err) {
             self.results.push(data);
             self.next();
         }
         else {
+            defer.fail(err);
             endTask.fail(err);
         }
     };
@@ -267,13 +272,14 @@ Asynk.prototype.serie = function(endcall, endcallArgs) {
         }
     };
     this.next();
-    return this;
+    return defer.promise();
 };
 
-Asynk.prototype.parallel = function(endcall, endcallArgs) {
+Asynk.prototype.parallel = function(endcallArgs) {
     var self = this;
-    var endTask = new Task(this, 'end', endcall);
-    endTask.args = endcallArgs || this.results;
+    var defer = new Deferred();
+    var endTask = new Task(this, 'end', defer.resolve.bind(defer));
+    endTask.args = endcallArgs || [new DefArg('alias', 'all')];
 
     var count = 0;
     var todo = self.tasks.length;
@@ -294,13 +300,14 @@ Asynk.prototype.parallel = function(endcall, endcallArgs) {
             }
         }
         else {
+            defer.fail(err);
             endTask.fail(err);
         }
     };
     
     if (this.tasks.length === 0){
         endTask.execute();
-        return this;
+        return defer.promise();
     }
     
     this.tasks.forEach(function(task) {
@@ -313,13 +320,14 @@ Asynk.prototype.parallel = function(endcall, endcallArgs) {
         task.execute();
     });
 
-    return this;
+    return defer.promise();
 };
 
-Asynk.prototype.parallelLimited = function(limit, endcall, endcallArgs) {
+Asynk.prototype.parallelLimited = function(limit, endcallArgs) {
     var self = this;
-    var endTask = new Task(this, 'end', endcall);
-    endTask.args = endcallArgs || this.results;
+    var defer = new Deferred();
+    var endTask = new Task(this, 'end', defer.resolve.bind(defer));
+    endTask.args = endcallArgs || [new DefArg('alias', 'all')];
 
     var count = 0;
     var todo = self.tasks.length;
@@ -344,13 +352,14 @@ Asynk.prototype.parallelLimited = function(limit, endcall, endcallArgs) {
             }
         }
         else {
+            defer.fail(err);
             endTask.fail(err);
         }
     };
 
     if (this.tasks.length === 0){
         endTask.execute();
-        return this;
+        return defer.promise();
     }
 
     this.tasks.forEach(function(task) {
@@ -369,18 +378,8 @@ Asynk.prototype.parallelLimited = function(limit, endcall, endcallArgs) {
         }
     });
 
-    return this;
+    return defer.promise();
 };
-/*
- Asynk.prototype.getTask = function(id){
- if (_.isString(id)) {
- if (_.) {
- id = this.aliasMap[id];
- }
- }
- return this.tasks[id];
- }*/
-
 
 module.exports = {
     add: function(fct) { return new Asynk().add(fct); },
@@ -396,7 +395,9 @@ module.exports = {
     },
     item: new DefArg('item'),
     fifo: function(){ return new Fifo(); },
-    progressive: function(start,step){ return new Progressive(start,step); }
+    progressive: function(start,step){ return new Progressive(start,step); },
+    deferred: function() { return new Deferred(); },
+    when: new Deferred().when
 };
 
 

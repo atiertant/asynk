@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var utils = require('./lib/utils');
 var Deferred = require('./lib/deferred');
 
 /********************************************************************************/
@@ -57,11 +57,11 @@ Task.prototype.checkDependencies = function() {
     for (key in this.dependencies) {
         var id = this.dependencies[key];
 
-        if (_.isString(id)) {
+        if (utils.isString(id)) {
             id = this.parentStack.aliasMap[id];
         }
 
-        if (_.isUndefined(this.parentStack.results[id])) {
+        if (utils.isUndefined(this.parentStack.results[id])) {
             return false;
         }
     }
@@ -81,7 +81,7 @@ DefArg.prototype.resolve = function(task) {
     switch (this.type) {
         case 'order':
             if (this.value >= 0) {
-                if (_.isUndefined(task.parentStack.results[this.value])) {
+                if (utils.isUndefined(task.parentStack.results[this.value])) {
                     task.status = WAITING_FOR_DEPENDENCY;
                     task.dependencies.push(this.value);
                     return this;
@@ -91,7 +91,7 @@ DefArg.prototype.resolve = function(task) {
                 }
             }
             else if (this.value < 0) {
-                if (_.isUndefined(task.parentStack.results[task.id + this.value])) {
+                if (utils.isUndefined(task.parentStack.results[task.id + this.value])) {
                     task.status = WAITING_FOR_DEPENDENCY;
                     task.dependencies.push(task.id + this.value);
                     return this;
@@ -126,7 +126,7 @@ DefArg.prototype.resolve = function(task) {
 /********************************************************************************/
 var Progressive = function(start, step) {
     this.step = step || 1;
-    this.last = (_.isUndefined(start) ? 1 : start) - this.step;
+    this.last = (utils.isUndefined(start) ? 1 : start) - this.step;
     this.stack = [];
 };
 
@@ -136,14 +136,14 @@ Progressive.prototype.push = function(order, fct) {
     this.stack.push(task);
 
     return function(){
-        task.args = _.toArray(arguments);
+        task.args = utils.toArray(arguments);
         var reCheck = true;
         while (reCheck) {
             reCheck = false;
             for(i in self.stack){        
                 var queued = self.stack[i];
                 if (queued.order === (self.last + self.step)) {
-                    if (!_.isUndefined(queued.args)) {
+                    if (!utils.isUndefined(queued.args)) {
                         queued.fct.apply(null, queued.args);
                         self.stack.slice(i, 1);
                         self.last += self.step;
@@ -171,9 +171,9 @@ Fifo.prototype.push = function(fct) {
     task.fct = fct;
     this.stack.push(task);
     return function() {
-        task.args = _.toArray(arguments);
+        task.args = utils.toArray(arguments);
         if (self.stack[0] === task) {
-            while (self.stack.length && !_.isUndefined(self.stack[0].args)) {
+            while (self.stack.length && !utils.isUndefined(self.stack[0].args)) {
                 var callback = self.stack.shift();
                 callback.fct.apply(null, callback.args);
             }
@@ -194,7 +194,7 @@ var Asynk = function() {
 };
 
 Asynk.prototype.add = function(fct) {
-    if ( _.isUndefined(fct) || !_.isFunction(fct) ) {
+    if ( utils.isUndefined(fct) || !utils.isFunction(fct) ) {
         throw new Error('Asynk add require a function as argument');
     }
     var newId = this.tasks.length;
@@ -205,7 +205,7 @@ Asynk.prototype.add = function(fct) {
 };
 
 Asynk.prototype.each = function(datas, fct) {
-    if ( _.isUndefined(fct) || !_.isFunction(fct) ) {
+    if ( utils.isUndefined(fct) || !utils.isFunction(fct) ) {
         throw new Error('Asynk each require a function as second argument');
     }
     var self = this;
@@ -221,10 +221,10 @@ Asynk.prototype.each = function(datas, fct) {
 };
 
 Asynk.prototype.args = function() {
-    args = _.toArray(arguments);
+    args = utils.toArray(arguments);
     var self = this;
     this.currentTasks.forEach(function(currentTask) {
-        self.tasks[currentTask].args = _.clone(args);
+        self.tasks[currentTask].args = utils.toArray(args);
     });
     return this;
 };
@@ -239,7 +239,7 @@ Asynk.prototype.require = function(dependency) {
 };
 
 Asynk.prototype.alias = function(alias) {
-    if (_.isString(alias)) {
+    if (utils.isString(alias)) {
         var self = this;
         this.currentTasks.forEach(function(currentTask, index) {
             if (self.currentTasks.length > 1) {
@@ -347,7 +347,7 @@ Asynk.prototype.parallelLimited = function(limit, endcallArgs) {
             }
             else {
                 self.tasks.forEach(function(task) {
-                    var stats = _.countBy(self.tasks, function(task) {
+                    var stats = utils.countBy(self.tasks, function(task) {
                         return task.status;
                     });
                     var running = stats[RUNNING] || 0;
@@ -375,7 +375,7 @@ Asynk.prototype.parallelLimited = function(limit, endcallArgs) {
     });
 
     this.tasks.forEach(function(task) {
-        var stats = _.countBy(self.tasks, function(task) {
+        var stats = utils.countBy(self.tasks, function(task) {
             return task.status;
         });
         var running = stats[RUNNING] || 0;
@@ -392,7 +392,7 @@ module.exports = {
     each: function(datas, fct) { return new Asynk().each(datas, fct); },
     callback: new DefArg('callback'),
     data: function(val) {
-        if (_.isString(val)) {
+        if (utils.isString(val)) {
             return new DefArg('alias', val);
         }
         else {

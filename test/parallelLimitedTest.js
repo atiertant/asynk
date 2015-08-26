@@ -40,4 +40,75 @@ describe('ParallelLimited', function () {
                     done();
                 });
     });
+    it('should resolve disordered dependencies in parallelLimited', function (done) {
+        asynk.each([0, 1, 2], f30ms).require('two')
+                .each([0, 1, 2], f10ms).alias('two')
+                .each([0, 1, 2], f20ms)
+                .parallelLimited(2)
+                .done(function (results) {
+                    assert(results.length === 9);
+                    assert(results[0] === 0);
+                    assert(results[3] === 0);
+                    assert(results[8] === 2);                    
+                    done();
+                });
+    });
+    
+    it('should loop each time argument function return true', function (done) {
+        var i = 1;
+        asynk.each([0, 1, 2], f30ms)
+                .each([0, 1, 2], f10ms)
+                .each([0, 1, 2], f20ms)
+                .parallelLimited(2)
+                .loop(function(results){
+                    assert(results.length === 9);
+                    assert(results[0] === 0);
+                    assert(results[3] === 0);
+                    assert(results[8] === 2); 
+                    return i++ < 3; 
+                })
+                .done(function (results) {
+                    assert(results.length === 3);
+                    assert(results[0][0] === 0);
+                    assert(results[0][3] === 0);
+                    assert(results[0][8] === 2); 
+                    assert(results[1][0] === 0);
+                    assert(results[1][3] === 0);
+                    assert(results[1][8] === 2); 
+                    assert(results[2][0] === 0);
+                    assert(results[2][3] === 0);
+                    assert(results[2][8] === 2); 
+                    done();
+                });
+    });
+    
+    it('should loop each time asynchronous function passed as argument return true in its callback', function (done) {
+        var i = 1;
+        asynk.each([0, 1, 2], f30ms)
+                .each([0, 1, 2], f10ms)
+                .each([0, 1, 2], f20ms)
+                .parallelLimited(5)
+                .asyncLoop(function(results,cb){
+                    assert(results.length === 9);
+                    assert(results[0] === 0);
+                    assert(results[3] === 0);
+                    assert(results[8] === 2); 
+                    setTimeout(function(){
+                        cb(null,i++ < 3);
+                    },10);
+                })
+                .done(function (results) {
+                    assert(results.length === 3);
+                    assert(results[0][0] === 0);
+                    assert(results[0][3] === 0);
+                    assert(results[0][8] === 2); 
+                    assert(results[1][0] === 0);
+                    assert(results[1][3] === 0);
+                    assert(results[1][8] === 2); 
+                    assert(results[2][0] === 0);
+                    assert(results[2][3] === 0);
+                    assert(results[2][8] === 2); 
+                    done();
+                });
+    });
 });

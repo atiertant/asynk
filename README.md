@@ -1,7 +1,7 @@
 ![asynk.js](http://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Break_dance.svg/512px-Break_dance.svg.png)Asynk.js
 --------
 
-Asynk is a small tool for javascript asynchronous task management.
+Asynk is a feature-rich JavaScript library designed to simplify common asynchronous JavaScript programming tasks.
 
 
 ## Example
@@ -11,11 +11,11 @@ asynk.add(fs.open).args('./TEST.txt','w',asynk.callback)
 	.add(fs.write).args(asynk.data(0),new Buffer('hello world'),0,11,null,asynk.callback)
 	.add(fs.close).args(asynk.data(-2),asynk.callback)
 	.add(fs.readFile).args('./TEST.txt', "utf8",asynk.callback).alias('content')
-	.serie(console.log,[asynk.data('content')]);
+	.serie([asynk.data('content')]).done(console.log);
 //Log 'hello world' in console
 ```
 
-Asynk adapt to fit your functions syntax without writting a warper function and can dynimaquely get results from a task output back to an other input and more...
+Asynk adapt to fit your functions syntax without writting a warper function and can dynamically get results from a task output back to an other input and more...
 see full documentation below.
 
 ## Installation
@@ -25,6 +25,10 @@ Install from NPM.
 ```bash
 $ npm install asynk
 ```
+
+## License
+
+MIT
 
 ## Adding Task
 
@@ -36,7 +40,7 @@ Asynk command **must** start by adding one or more task using functions:
 add one task
 
 arguments:
-* fct: an asynchronous function
+* fct: an asynchronous function (default arguments value is [asynk.callback])
 
 ```javascript
 asynk.add(my_function).args(my_first_argument,asynk.callback) //...
@@ -51,7 +55,7 @@ add a task per array's item of the same function
 
 arguments:
 * array_data: an array of data
-* fct: an asynchronous function 
+* fct: an asynchronous function (default arguments value is [asynk.item,asynk.callback])
 
 ```javascript
 asynk.each([0,1,2],my_function).args(asynk.item,asynk.callback) //...
@@ -146,52 +150,55 @@ and so on my_function2's end,my_function3 will be execute.
 Asynk command must finnish by choosing an excution mode:
 
 ### Serie 
-*serie(fct,args)*
+*serie(args)*
 
 arguments:
-* fct: a function called once serie is finnished
-* args: an array of arguments to pass to fct
+* args: an array of arguments to pass to fct ( default is asynk.data('all') )
+
+return: a promise
 
 in this mode,all task are execute one by one in the order they where inserted.
 
 ```javascript
 asynk.each(['one','two'],my_function).args(asynk.item,asynk.callback)
-	.serie(console.log,[asynk.data('all')]);
+	.serie().done(console.log);
 ```
 
 here my_function is called with argument 'one',once this function ended,the same function is called with argument 'two'.
 when every task are finnished,the function passed to serie is called with args arguments array.
 
 ### Parallel
-*parallel(fct,args)*
+*parallel(args)*
 
 arguments:
-* fct: a function called once parallel is finnished
-* args: an array of arguments to pass to fct
+* args: an array of arguments to pass to fct ( default is asynk.data('all') )
+
+return: a promise
 
 in this mode,all task are started at the same time.
 
 ```javascript
 asynk.each(['one','two'],my_function).args(asynk.item,asynk.callback)
-	.parallel(console.log,[asynk.data('all')]);
+	.parallel().done(console.log);
 ```
 
 here my_function is called with argument 'one' and a second time with 'two' without waiting anything.
 when every task are finnished,the function passed to parallel is called with args arguments array.
 
 ### ParallelLimited
-*parallelLimited(limit,fct,args)*
+*parallelLimited(limit,args)*
 
 arguments:
 * limit: an integer number of maximum parallel task to execute
-* fct: a function called once parallelLimited is finnished
-* args: an array of arguments to pass to fct
+* args: an array of arguments to pass to fct ( default is asynk.data('all') )
+
+return: a promise
 
 in this mode,a predefined number(limit) of task are running in the same time.
 
 ```javascript
 asynk.each([0,0,0,0],my_function).args(asynk.item,asynk.callback)
-	.parallelLimited(2,console.log,[asynk.data('all')]);
+	.parallelLimited(2).done(console.log);
 ```
 
 here my_function is called four time with 0 as argument but two time before and one time after a callback is called until all four tasks are done.

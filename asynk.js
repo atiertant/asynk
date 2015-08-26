@@ -15,9 +15,8 @@ var FAIL = 4;
 /* Task                                                                         */
 /********************************************************************************/
 
-var Task = function(parentStack, id, fct) {
-    var self = this;
-    this.parentStack = parentStack;
+var Task = function (context, id, fct) {
+    this.context = context;
     this.id = id;
     this.alias = null;
     this.fct = fct;
@@ -26,11 +25,11 @@ var Task = function(parentStack, id, fct) {
     this.status = WAITING;
 };
 
-Task.prototype.setCallback = function(callback) {
+Task.prototype.setCallback = function (callback) {
     this.callback = callback;
 };
 
-Task.prototype.execute = function() {
+Task.prototype.execute = function () {
     var self = this;
     if (!this.checkDependencies()) {
         this.status = WAITING_FOR_DEPENDENCY;
@@ -38,30 +37,47 @@ Task.prototype.execute = function() {
     }
     this.status = RUNNING;
 
-    this.args.forEach(function(arg, index) {
+    var resolved = [];
+    this.args.forEach(function (arg, index) {
         if (arg instanceof DefArg) {
-            self.args[index] = arg.resolve(self);
+            resolved[index] = arg.resolve(self);
+        }
+        else {
+            resolved[index] = arg;
         }
     });
     if (this.status === RUNNING) {
-        this.fct.apply(null, this.args);
+        this.fct.apply(null, resolved);
     }
 };
 
-Task.prototype.fail = function(err) {
+Task.prototype.fail = function (err) {
     this.status = FAIL;
     this.fct.apply(null, [err, null]);
 };
 
-Task.prototype.checkDependencies = function() {
-    for (key in this.dependencies) {
+Task.prototype.checkDependencies = function () {
+    for (var key in this.dependencies) {
         var id = this.dependencies[key];
 
         if (utils.isString(id)) {
-            id = this.parentStack.aliasMap[id];
+            var alias = this.context.aliasMap[id];
+            if (utils.isUndefined(alias)) {
+                throw new Error('Unknown dependancy alias: ' + id);
+            }
+            if (utils.isArray(alias)) {
+                for (var i in alias) {
+                    var taskid = alias[i];
+                    if (this.context.tasks[taskid].status !== DONE) {
+                        return false;
+                    }
+                }
+            }
+            else if (this.context.tasks[alias].status !== DONE) {
+                return false;
+            }
         }
-
-        if (utils.isUndefined(this.parentStack.results[id])) {
+        else if (this.context.tasks[id].status !== DONE) {
             return false;
         }
     }
@@ -72,42 +88,42 @@ Task.prototype.checkDependencies = function() {
 /* Deferred Argument                                                            */
 /********************************************************************************/
 
-var DefArg = function(type, val) {
+var DefArg = function (type, val) {
     this.type = type;
     this.value = val;
 };
 
-DefArg.prototype.resolve = function(task) {
+DefArg.prototype.resolve = function (task) {
     switch (this.type) {
         case 'order':
             if (this.value >= 0) {
-                if (utils.isUndefined(task.parentStack.results[this.value])) {
+                if (task.context.tasks[this.value].status !== DONE) {
                     task.status = WAITING_FOR_DEPENDENCY;
                     task.dependencies.push(this.value);
                     return this;
                 }
                 else {
-                    return task.parentStack.results[this.value];
+                    return task.context.results[this.value];
                 }
             }
             else if (this.value < 0) {
-                if (utils.isUndefined(task.parentStack.results[task.id + this.value])) {
+                if (task.context.tasks[task.id + this.value].status !== DONE) {
                     task.status = WAITING_FOR_DEPENDENCY;
                     task.dependencies.push(task.id + this.value);
                     return this;
                 }
                 else {
-                    return task.parentStack.results[task.id + this.value];
+                    return task.context.results[task.id + this.value];
                 }
             }
             break;
 
         case 'alias':
             if (this.value === 'all') {
-                return task.parentStack.results;
+                return task.context.results;
             }
             else {
-                return task.parentStack.results[task.parentStack.aliasMap[this.value]];
+                return task.context.results[task.context.aliasMap[this.value]];
             }
             break;
 
@@ -124,23 +140,23 @@ DefArg.prototype.resolve = function(task) {
 /********************************************************************************/
 /* progressive                                                                  */
 /********************************************************************************/
-var Progressive = function(start, step) {
+var Progressive = function (start, step) {
     this.step = step || 1;
     this.last = (utils.isUndefined(start) ? 1 : start) - this.step;
     this.stack = [];
 };
 
-Progressive.prototype.push = function(order, fct) {
+Progressive.prototype.push = function (order, fct) {
     var self = this;
     var task = {order: order, fct: fct};
     this.stack.push(task);
 
-    return function(){
+    return function () {
         task.args = utils.toArray(arguments);
         var reCheck = true;
         while (reCheck) {
             reCheck = false;
-            for(i in self.stack){        
+            for (var i in self.stack) {
                 var queued = self.stack[i];
                 if (queued.order === (self.last + self.step)) {
                     if (!utils.isUndefined(queued.args)) {
@@ -162,15 +178,15 @@ Progressive.prototype.push = function(order, fct) {
 /********************************************************************************/
 /* Fifo                                                                         */
 /********************************************************************************/
-var Fifo = function() {
+var Fifo = function () {
     this.stack = [];
 };
-Fifo.prototype.push = function(fct) {
+Fifo.prototype.push = function (fct) {
     var self = this;
     var task = {};
     task.fct = fct;
     this.stack.push(task);
-    return function() {
+    return function () {
         task.args = utils.toArray(arguments);
         if (self.stack[0] === task) {
             while (self.stack.length && !utils.isUndefined(self.stack[0].args)) {
@@ -185,213 +201,310 @@ Fifo.prototype.push = function(fct) {
 /* Asynk                                                                        */
 /********************************************************************************/
 
-var Asynk = function() {
-    var self = this;
-    this.tasks = [];
-    this.aliasMap = [];
-    this.results = [];
-    this.currentTasks = [];
-};
+var Asynk = function () {
 
-Asynk.prototype.add = function(fct) {
-    if ( utils.isUndefined(fct) || !utils.isFunction(fct) ) {
-        throw new Error('Asynk add require a function as argument');
-    }
-    var newId = this.tasks.length;
-    this.tasks[newId] = new Task(this, newId, fct);
-    this.currentTasks = [newId];
-    this.args(new DefArg('callback'));
-    return this;
-};
-
-Asynk.prototype.each = function(datas, fct) {
-    if ( utils.isUndefined(fct) || !utils.isFunction(fct) ) {
-        throw new Error('Asynk each require a function as second argument');
-    }
-    var self = this;
-    self.currentTasks = [];
-    datas.forEach(function(data) {
-        var newId = self.tasks.length;
-        self.tasks[newId] = new Task(self, newId, fct);
-        self.tasks[newId].item = data;
-        self.currentTasks.push(newId);
-    });
-    this.args(new DefArg('item'),new DefArg('callback'));
-    return this;
-};
-
-Asynk.prototype.args = function() {
-    args = utils.toArray(arguments);
-    var self = this;
-    this.currentTasks.forEach(function(currentTask) {
-        self.tasks[currentTask].args = utils.toArray(args);
-    });
-    return this;
-};
-
-Asynk.prototype.require = function(dependency) {
-    var self = this;
-    this.currentTasks.forEach(function(currentTask) {
-        var current = self.tasks[currentTask];
-        current.dependencies.push(dependency);
-    });
-    return this;
-};
-
-Asynk.prototype.alias = function(alias) {
-    if (utils.isString(alias)) {
-        var self = this;
-        this.currentTasks.forEach(function(currentTask, index) {
-            if (self.currentTasks.length > 1) {
-                alias += index;
+    var after = {
+        loop: function (condition) {
+            if (!utils.isFunction(condition)) {
+                throw new Error('Asynk loop function require a function as first argument');
             }
-            self.tasks[currentTask].alias = alias;
-            self.aliasMap[alias] = currentTask;
-        });
-    }
-    return this;
-};
+            _Context.loopDefer = _Context.loopDefer || new Deferred();
+            _Context.loopResults = _Context.loopResults || [];
+            this.done(function () {
+                var result = utils.toArray(arguments);
+                if (result.length > 1) {
 
-Asynk.prototype.serie = function(endcallArgs) {
-    var self = this;
-    var defer = new Deferred();
-    var endTask = new Task(this, 'end', defer.resolve.bind(defer));
-    endTask.args = endcallArgs || [new DefArg('alias', 'all')];
-    var cb = function(err, data) {
-        if (!err) {
-            self.results.push(data);
-            self.next();
-        }
-        else {
-            defer.fail(err);
-            endTask.fail(err);
-        }
-    };
-    this.next = function() {
-        var current = self.tasks.shift();
-        if (current) {
-            current.setCallback(cb);
-            current.execute();
-        }
-        else {
-            endTask.execute();
-        }
-    };
-    this.next();
-    return defer.promise();
-};
+                    _Context.loopResults.push(result);
+                }
+                else {
+                    _Context.loopResults.push(result[0]);
+                }
 
-Asynk.prototype.parallel = function(endcallArgs) {
-    var self = this;
-    var defer = new Deferred();
-    var endTask = new Task(this, 'end', defer.resolve.bind(defer));
-    endTask.args = endcallArgs || [new DefArg('alias', 'all')];
-
-    var count = 0;
-    var todo = self.tasks.length;
-    var cb = function(task, err, data) {
-        task.status = DONE;
-        if (!err) {
-            self.results[task.id] = data;
-            count++;
-            if (count >= todo) {
-                endTask.execute();
-            }
-            else {
-                self.tasks.forEach(function(task) {
-                    if (task.status === WAITING_FOR_DEPENDENCY) {
-                        task.execute();
+                if (condition.apply(null, result)) {
+                    //reset values
+                    for (var i in _Context.tasks) {
+                        _Context.tasks[i].status = WAITING;
                     }
-                });
+                    _Context.results = [];
+                    _Context.currentTasks = [];
+                    _Context.exec.fct.apply(null, _Context.exec.args).loop(condition);
+                }
+                else {
+                    _Context.loopDefer.resolve(_Context.loopResults);
+                }
+            });
+            this.fail(_Context.loopDefer.reject);
+            return _Context.loopDefer.promise();
+        },
+        asyncLoop: function (condition) {
+            if (!utils.isFunction(condition)) {
+                throw new Error('Asynk loop function require a function as first argument');
             }
-        }
-        else {
-            defer.fail(err);
-            endTask.fail(err);
+            _Context.loopDefer = _Context.loopDefer || new Deferred();
+            _Context.loopResults = _Context.loopResults || [];
+            this.done(function () {
+                var result;
+                if (arguments.length > 1) {
+                    result = utils.toArray(arguments);
+                }
+                else {
+                    result = arguments[0];
+                }
+                _Context.loopResults.push(result);
+                
+                condition.apply(null, [result, function (err, loop) {
+                    if (err) {
+                        return _Context.loopDefer.reject(err);
+                    }
+                    if (loop) {
+                        //reset values
+                        for (var i in _Context.tasks) {
+                            _Context.tasks[i].status = WAITING;
+                        }
+                        _Context.results = [];
+                        _Context.currentTasks = [];
+                        _Context.exec.fct.apply(null, _Context.exec.args).asyncLoop(condition);
+                    }
+                    else {
+                        _Context.loopDefer.resolve(_Context.loopResults);
+                    }
+                }]);
+            });
+            this.fail(_Context.loopDefer.reject);
+            return _Context.loopDefer.promise();
         }
     };
-    
-    if (this.tasks.length === 0){
-        endTask.execute();
-        return defer.promise();
-    }
-    
-    this.tasks.forEach(function(task) {
-        task.setCallback(function(err, data) {
-            cb(task, err, data);
+
+    var Asynk = {};
+
+    var _Context = {
+        tasks: [],
+        aliasMap: {},
+        results: [],
+        currentTasks: Asynk.currentTasks
+    };
+
+    Asynk.add = function (fct) {
+        if (utils.isUndefined(fct) || !utils.isFunction(fct)) {
+            throw new Error('Asynk add require a function as argument');
+        }
+        var newId = _Context.tasks.length;
+        _Context.tasks[newId] = new Task(_Context, newId, fct);
+        _Context.currentTasks = [newId];
+        this.args(new DefArg('callback'));
+        return this;
+    };
+
+    Asynk.each = function (datas, fct) {
+        if (utils.isUndefined(fct) || !utils.isFunction(fct)) {
+            throw new Error('Asynk each require a function as second argument');
+        }
+        _Context.currentTasks = [];
+        datas.forEach(function (data) {
+            var newId = _Context.tasks.length;
+            _Context.tasks[newId] = new Task(_Context, newId, fct);
+            _Context.tasks[newId].item = data;
+            _Context.currentTasks.push(newId);
         });
-    });
+        this.args(new DefArg('item'), new DefArg('callback'));
+        return this;
+    };
 
-    this.tasks.forEach(function(task) {
-        task.execute();
-    });
+    Asynk.args = function () {
+        args = utils.toArray(arguments);
+        _Context.currentTasks.forEach(function (currentTask) {
+            _Context.tasks[currentTask].args = utils.toArray(args);
+        });
+        return this;
+    };
 
-    return defer.promise();
-};
+    Asynk.require = function (dependency) {
+        _Context.currentTasks.forEach(function (currentTask) {
+            var current = _Context.tasks[currentTask];
+            current.dependencies.push(dependency);
+        });
+        return this;
+    };
 
-Asynk.prototype.parallelLimited = function(limit, endcallArgs) {
-    var self = this;
-    var defer = new Deferred();
-    var endTask = new Task(this, 'end', defer.resolve.bind(defer));
-    endTask.args = endcallArgs || [new DefArg('alias', 'all')];
-
-    var count = 0;
-    var todo = self.tasks.length;
-    var cb = function(task, err, data) {
-        task.status = DONE;
-        if (!err) {
-            self.results[task.id] = data;
-            count++;
-            if (count >= todo) {
-                endTask.execute();
+    Asynk.alias = function (alias) {
+        if (utils.isString(alias)) {
+            _Context.currentTasks.forEach(function (currentTask, index) {
+                _Context.tasks[currentTask].alias = alias;
+            });
+            if (_Context.currentTasks.length > 1) {
+                _Context.aliasMap[alias] = _Context.currentTasks;
             }
             else {
-                self.tasks.forEach(function(task) {
-                    var stats = utils.countBy(self.tasks, function(task) {
-                        return task.status;
+                _Context.aliasMap[alias] = _Context.currentTasks[0];
+            }
+        }
+        return this;
+    };
+
+    Asynk.serie = function (endcallArgs) {
+        _Context.exec = {
+            fct: Asynk.serie,
+            args: [endcallArgs]
+        };
+        var defer = new Deferred();
+        var endTask = new Task(_Context, 'end', defer.resolve.bind(defer));
+        endTask.args = endcallArgs || [new DefArg('alias', 'all')];
+        var currentId = 0;
+
+        var cb = function (err, data) {
+            if (!err) {
+                _Context.tasks[currentId].status = DONE;
+                _Context.results.push(data);
+                currentId++;
+                next();
+            }
+            else {
+                _Context.tasks[currentId].status = FAIL;
+                defer.fail(err);
+                endTask.fail(err);
+            }
+        };
+        var next = function () {
+            var current = _Context.tasks[currentId];
+            if (current) {
+                current.setCallback(cb);
+                current.execute();
+                if (current.status === WAITING_FOR_DEPENDENCY) {
+                    defer.reject(new Error('could not resolve this dependancies'));
+                }
+            }
+            else {
+                endTask.execute();
+            }
+        };
+        next();
+        return defer.promise(after);
+    };
+
+    Asynk.parallel = function (endcallArgs) {
+        _Context.exec = {
+            fct: Asynk.parallel,
+            args: [endcallArgs]
+        };
+        var defer = new Deferred();
+        var endTask = new Task(_Context, 'end', defer.resolve.bind(defer));
+        endTask.args = endcallArgs || [new DefArg('alias', 'all')];
+
+        var count = 0;
+        var todo = _Context.tasks.length;
+        var cb = function (task, err, data) {
+            task.status = DONE;
+            if (!err) {
+                _Context.results[task.id] = data;
+                count++;
+                if (count >= todo) {
+                    endTask.execute();
+                }
+                else {
+                    _Context.tasks.forEach(function (task) {
+                        if (task.status === WAITING_FOR_DEPENDENCY) {
+                            task.execute();
+                        }
                     });
-                    var running = stats[RUNNING] || 0;
-                    if ((running < limit) && (task.status < RUNNING)) {
-                        task.execute();
-                    }
-                });
+                }
             }
+            else {
+                defer.fail(err);
+                endTask.fail(err);
+            }
+        };
+
+        if (_Context.tasks.length === 0) {
+            endTask.execute();
+            return defer.promise();
         }
-        else {
-            defer.fail(err);
-            endTask.fail(err);
-        }
+
+        _Context.tasks.forEach(function (task) {
+            task.setCallback(function (err, data) {
+                cb(task, err, data);
+            });
+        });
+
+        _Context.tasks.forEach(function (task) {
+            task.execute();
+        });
+
+        return defer.promise(after);
     };
 
-    if (this.tasks.length === 0){
-        endTask.execute();
-        return defer.promise();
-    }
+    Asynk.parallelLimited = function (limit, endcallArgs) {
+        _Context.exec = {
+            fct: Asynk.parallelLimited,
+            args: [limit, endcallArgs]
+        };
+        var defer = new Deferred();
+        var endTask = new Task(_Context, 'end', defer.resolve.bind(defer));
+        endTask.args = endcallArgs || [new DefArg('alias', 'all')];
 
-    this.tasks.forEach(function(task) {
-        task.setCallback(function(err, data) {
-            cb(task, err, data);
-        });
-    });
+        var count = 0;
+        var todo = _Context.tasks.length;
+        var cb = function (task, err, data) {
+            task.status = DONE;
+            if (!err) {
+                _Context.results[task.id] = data;
+                count++;
+                if (count >= todo) {
+                    endTask.execute();
+                }
+                else {
+                    _Context.tasks.forEach(function (task) {
+                        var stats = utils.countBy(_Context.tasks, function (task) {
+                            return task.status;
+                        });
+                        var running = stats[RUNNING] || 0;
+                        if ((running < limit) && (task.status < RUNNING)) {
+                            task.execute();
+                        }
+                    });
+                }
+            }
+            else {
+                defer.fail(err);
+                endTask.fail(err);
+            }
+        };
 
-    this.tasks.forEach(function(task) {
-        var stats = utils.countBy(self.tasks, function(task) {
-            return task.status;
-        });
-        var running = stats[RUNNING] || 0;
-        if ((running < limit) && (task.status < RUNNING)) {
-            task.execute();
+        if (_Context.tasks.length === 0) {
+            endTask.execute();
+            return defer.promise();
         }
-    });
 
-    return defer.promise();
+        _Context.tasks.forEach(function (task) {
+            task.setCallback(function (err, data) {
+                cb(task, err, data);
+            });
+        });
+
+        _Context.tasks.forEach(function (task) {
+            var stats = utils.countBy(_Context.tasks, function (task) {
+                return task.status;
+            });
+            var running = stats[RUNNING] || 0;
+            if ((running < limit) && (task.status < RUNNING)) {
+                task.execute();
+            }
+        });
+
+        return defer.promise(after);
+    };
+
+    return Asynk;
 };
 
 module.exports = {
-    add: function(fct) { return new Asynk().add(fct); },
-    each: function(datas, fct) { return new Asynk().each(datas, fct); },
+    add: function (fct) {
+        return Asynk().add(fct);
+    },
+    each: function (datas, fct) {
+        return Asynk().each(datas, fct);
+    },
     callback: new DefArg('callback'),
-    data: function(val) {
+    data: function (val) {
         if (utils.isString(val)) {
             return new DefArg('alias', val);
         }
@@ -400,10 +513,14 @@ module.exports = {
         }
     },
     item: new DefArg('item'),
-    fifo: function(){ return new Fifo(); },
-    progressive: function(start,step){ return new Progressive(start,step); },
-    deferred: function() { return new Deferred(); },
+    fifo: function () {
+        return new Fifo();
+    },
+    progressive: function (start, step) {
+        return new Progressive(start, step);
+    },
+    deferred: function () {
+        return new Deferred();
+    },
     when: new Deferred().when
 };
-
-

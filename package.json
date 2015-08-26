@@ -1,7 +1,7 @@
 {
   "name": "asynk",
   "version": "0.0.7",
-  "description": "flow control library for javascript",
+  "description": "Asynk is a feature-rich JavaScript library designed to simplify common asynchronous JavaScript programming tasks.",
   "main": "asynk.js",
   "scripts": {
     "test": "make test"
@@ -13,7 +13,10 @@
   "keywords": [
     "asynchronous",
     "asynk",
-    "async"
+    "async",
+    "deferred",
+    "callback",
+    "promise"
   ],
   "author": "Alexandre Tiertant",
   "license": "MIT",

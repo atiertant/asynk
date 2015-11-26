@@ -72,6 +72,57 @@ describe('Deferred', function () {
             done();
         });
     });
+    it('then should return a new promise and transform errors', function (done) {
+        var promiseOfPerson = asynk.deferred();
+        var promiseOfName = promiseOfPerson.then(function (person) {
+            return person.name;
+        },function(err){
+            return 'could not return name';
+        });
+
+        promiseOfPerson.fail(function (err) {
+            assert(err === 'could not return person');
+        });
+
+        promiseOfName.fail(function (err) {
+            assert(err === 'could not return name');
+        });
+        promiseOfPerson.reject('could not return person');
+        promiseOfPerson.fail(function () {
+            done();
+        });
+    });
+    it('then should take 1,2 or 3 function arguments', function (done) {
+        var def_resolve = asynk.deferred();
+        var def_reject = asynk.deferred();
+        var pres1 = def_resolve.then(function(d){ return d; });
+        var pres2 = def_resolve.then(function(d){ return d; },function(e){ return e; });
+        var pres3 = def_resolve.then(function(d){ return d; },function(e){ return e; },function(n){ return n; });
+        var prej1 = def_reject.then(function(d){ return d; });
+        var prej2 = def_reject.then(function(d){ return d; },function(e){ return e; });
+        var prej3 = def_reject.then(function(d){ return d; },function(e){ return e; },function(n){ return n; });
+        def_resolve.resolve('test');
+        def_reject.reject('test');
+        var res = asynk.when(pres1, pres2, pres3).done(function (r1, r2, r3) {
+            assert(r1 === 'test');
+            assert(r2 === 'test');
+            assert(r3 === 'test');
+        }).fail(function(){
+            done('when(resolved,resolved,resolved) should not execute when.fail()');
+        });
+        var rej = asynk.when(prej1, prej2, prej3).fail(function (r1, r2, r3) {
+            assert(r1 === 'test');
+            assert(r2 === void 0);
+            assert(r3 === void 0);
+        }).done(function(r1, r2, r3){
+            done('when(rejected,rejected) should not execute when.done()');
+        });
+        asynk.when(res,rej).done(function(r1,r2){
+            done('when(resolved,rejected) should not execute when.done()');
+        }).fail(function(){
+            done();
+        });
+    });
     it('when should wait for all promise to resolve en return result in order of promises', function (done) {
         var d1 = asynk.deferred();
         var d2 = asynk.deferred();
@@ -90,8 +141,3 @@ describe('Deferred', function () {
         done();
     });
 });
-/*
- 
- 
- 
- */

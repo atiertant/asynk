@@ -1,6 +1,6 @@
 {
   "name": "asynk",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Asynk is a feature-rich JavaScript library designed to simplify common asynchronous JavaScript programming tasks.",
   "main": "asynk.js",
   "scripts": {

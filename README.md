@@ -171,7 +171,7 @@ when every task are finnished,the function passed to serie is called with args a
 *parallel(args)*
 
 arguments:
-* args: an array of arguments to pass to fct ( default is asynk.data('all') )
+* args: an array of arguments that are passed to doneCallbacks ( default is asynk.data('all') )
 
 return: a promise
 
@@ -203,6 +203,154 @@ asynk.each([0,0,0,0],my_function).args(asynk.item,asynk.callback)
 
 here my_function is called four time with 0 as argument but two time before and one time after a callback is called until all four tasks are done.
 when every task are finnished,the function passed to parallelLimited is called with args arguments array.
+
+## Deffered
+
+*asynk.deffered()*
+A factory function that returns a chainable utility object with methods to register multiple callbacks into callback queues, invoke callback queues, and relay the success or failure state of any synchronous or asynchronous function.
+
+return: a deffered object
+
+```javascript
+var defered = asynk.deferred();
+var promise = defered.promise();
+promise.done(function(arg){
+  console.log('hello ' + arg);
+});
+defered.resolve('world');
+```
+
+*always(fct)*
+Add function to be called when the deferred object is either resolved or rejected.
+
+arguments:
+* fct: a function called when deferred object is resolved or rejected.
+
+return: the deffered/promise object
+
+*done(fct)*
+Add function to be called when the deferred object is resolved.
+
+arguments:
+* fct: a function called when deferred object is resolved.
+
+return: the deffered/promise object
+
+*fail(fct)*
+Add function to be called when the deferred object is rejected.
+
+arguments:
+* fct: a function called when deferred object is rejected.
+
+return: the deffered/promise object
+
+*isRejected()*
+Determine whether a deferred object has been rejected.
+
+return: a boolean
+
+*isResolved()*
+Determine whether a deferred object has been resolved.
+
+return: a boolean
+
+*notify(args)*
+Call the progressCallbacks on a deferred object with the given args.
+
+arguments:
+* args: optional agruments passed to progessCallbacks.
+
+return: the deffered object
+
+*notifyWith(context, args)*
+Call the progressCallbacks on a deferred object with the given context and args.
+
+arguments:
+* context: context passed to progressCallbacks as the `this` object.
+* args: optional array of agruments passed to progessCallbacks.
+
+return: the deffered object
+
+*pipe(doneFilter)*
+Utility method to filter and/or chain deferreds.
+
+arguments:
+*doneFilter: A function called as doneCallback that return is passed to pipe returned promise doneCallbacks as arguments.
+
+return: a promise object
+
+*progress(fct)*
+Add function to be called when the deferred object generates progress notifications.
+
+arguments:
+* fct: a function called when deferred object notify function is called.
+
+return: the deffered/promise object
+
+*promise(obj)*
+Return a deferred’s Promise object.
+
+arguments:
+* obj: object that receive promise's functions.
+
+return: a promise object
+
+*reject(args)*
+Reject a deferred object and call any failCallbacks with the given args.
+
+arguments:
+* args: arguments that are passed to the failCallbacks.
+
+return: the deffered/promise object
+
+*rejectWith(context, args)*
+Reject a deferred object and call any failCallbacks with the given context and args.
+
+arguments:
+* context: context passed to failCallbacks as the `this` object.
+* args: optional array of agruments passed to failCallbacks.
+
+return: the deffered object
+
+*resolve(args)*
+Resolve a deferred object and call any doneCallbacks with the given args.
+
+arguments:
+* args: arguments that are passed to the doneCallbacks.
+
+return: the deffered/promise object
+
+*resolveWith(context, args)*
+Resolve a deferred object and call any doneCallbacks with the given context and args.
+
+arguments:
+* context: context passed to doneCallbacks as the `this` object.
+* args: optional array of agruments passed to doneCallbacks.
+
+return: the deffered object
+
+*state()*
+Determine the current state of a deferred object.
+
+return: a string('pending','resolved' or 'rejected')
+
+*then(doneFilter, failFilter, progressFilter)*
+Add functions to be called when the deferred object is resolved, rejected, or still in progress.
+
+arguments:
+* doneFilter: A function called as doneCallback that return is passed to then returned promise doneCallbacks as arguments.
+* failFilter: A function called as failCallback that return is passed to then returned promise doneCallbacks as arguments.
+* progressFilter: A function called as progressCallback that return is passed to then returned promise progressCallbacks as arguments.
+
+return: a promise object
+
+*when(deferreds)*
+Provides a way to execute callbacks functions based on one or more deferred objects that represent asynchronous events.
+
+arguments:
+* deferreds: a list of deferred or plain javascript objects.
+
+return: a promise object
 
 ## Stacks
 

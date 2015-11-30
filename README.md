@@ -206,7 +206,9 @@ when every task are finnished,the function passed to parallelLimited is called w
 
 ## Deffered
 
+### Asynk.deffered
 *asynk.deffered()*
+
 A factory function that returns a chainable utility object with methods to register multiple callbacks into callback queues, invoke callback queues, and relay the success or failure state of any synchronous or asynchronous function.
 
 return: a deffered object
@@ -220,7 +222,9 @@ promise.done(function(arg){
 defered.resolve('world');
 ```
 
+### Always
 *always(fct)*
+
 Add function to be called when the deferred object is either resolved or rejected.
 
 arguments:
@@ -228,7 +232,9 @@ arguments:
 
 return: the deffered/promise object
 
+### Done
 *done(fct)*
+
 Add function to be called when the deferred object is resolved.
 
 arguments:
@@ -236,7 +242,9 @@ arguments:
 
 return: the deffered/promise object
 
+### Fail
 *fail(fct)*
+
 Add function to be called when the deferred object is rejected.
 
 arguments:
@@ -244,17 +252,23 @@ arguments:
 
 return: the deffered/promise object
 
+### IsRejected
 *isRejected()*
+
 Determine whether a deferred object has been rejected.
 
 return: a boolean
 
+### IsResolved
 *isResolved()*
+
 Determine whether a deferred object has been resolved.
 
 return: a boolean
 
+### Notify
 *notify(args)*
+
 Call the progressCallbacks on a deferred object with the given args.
 
 arguments:
@@ -262,7 +276,9 @@ arguments:
 
 return: the deffered object
 
+### NotifyWith
 *notifyWith(context, args)*
+
 Call the progressCallbacks on a deferred object with the given context and args.
 
 arguments:
@@ -271,7 +287,9 @@ arguments:
 
 return: the deffered object
 
+### Pipe
 *pipe(doneFilter)*
+
 Utility method to filter and/or chain deferreds.
 
 arguments:
@@ -279,7 +297,9 @@ arguments:
 
 return: a promise object
 
+### Progress
 *progress(fct)*
+
 Add function to be called when the deferred object generates progress notifications.
 
 arguments:
@@ -287,7 +307,9 @@ arguments:
 
 return: the deffered/promise object
 
+### Promise
 *promise(obj)*
+
 Return a deferred’s Promise object.
 
 arguments:
@@ -295,7 +317,9 @@ arguments:
 
 return: a promise object
 
+### Reject
 *reject(args)*
+
 Reject a deferred object and call any failCallbacks with the given args.
 
 arguments:
@@ -303,7 +327,9 @@ arguments:
 
 return: the deffered/promise object
 
+### RejectWith
 *rejectWith(context, args)*
+
 Reject a deferred object and call any failCallbacks with the given context and args.
 
 arguments:
@@ -312,7 +338,9 @@ arguments:
 
 return: the deffered object
 
+### Resolve
 *resolve(args)*
+
 Resolve a deferred object and call any doneCallbacks with the given args.
 
 arguments:
@@ -320,7 +348,9 @@ arguments:
 
 return: the deffered/promise object
 
+### ResolveWith
 *resolveWith(context, args)*
+
 Resolve a deferred object and call any doneCallbacks with the given context and args.
 
 arguments:
@@ -329,12 +359,16 @@ arguments:
 
 return: the deffered object
 
+### State
 *state()*
+
 Determine the current state of a deferred object.
 
 return: a string('pending','resolved' or 'rejected')
 
+### Then
 *then(doneFilter, failFilter, progressFilter)*
+
 Add functions to be called when the deferred object is resolved, rejected, or still in progress.
 
 arguments:
@@ -344,7 +378,9 @@ arguments:
 
 return: a promise object
 
+### When
 *when(deferreds)*
+
 Provides a way to execute callbacks functions based on one or more deferred objects that represent asynchronous events.
 
 arguments:

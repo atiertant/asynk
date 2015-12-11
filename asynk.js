@@ -51,7 +51,7 @@ Task.prototype.execute = function () {
     }
 };
 
-Task.prototype.fail = function (err) {
+Task.prototype.reject = function (err) {
     this.status = FAIL;
     this.fct.apply(null, [err, null]);
 };
@@ -355,7 +355,7 @@ var Asynk = function () {
             if (err) {
                 _Context.tasks[currentId].status = FAIL;
                 defer.reject(err);
-                endTask.fail(err);
+                endTask.reject(err);
                 return;
             }
             _Context.tasks[currentId].status = DONE;
@@ -395,7 +395,7 @@ var Asynk = function () {
             task.status = DONE;
             if (err) {
                 defer.reject(err);
-                endTask.fail(err);
+                endTask.reject(err);
                 return;
             }
             _Context.results[task.id] = data;
@@ -445,7 +445,7 @@ var Asynk = function () {
             task.status = DONE;
             if (err) {
                 defer.reject(err);
-                endTask.fail(err);
+                endTask.reject(err);
                 return;
             }
             _Context.results[task.id] = data;

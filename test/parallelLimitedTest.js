@@ -111,4 +111,15 @@ describe('ParallelLimited', function () {
                     done();
                 });
     });
+
+    it('should fail on error', function(done) {
+      asynk.add(function(cb){
+        cb('error','data');
+      }).parallelLimited(5).done(function(data){
+        done('should not resolve on error');
+      }).fail(function(err){
+        assert(err === 'error');
+        done();
+      });
+    });  
 });

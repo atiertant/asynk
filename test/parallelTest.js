@@ -101,4 +101,15 @@ describe('Parallel', function () {
                     done();
                 });
     });
+
+    it('should fail on error', function(done) {
+      asynk.add(function(cb){
+        cb('error','data');
+      }).parallel().done(function(data){
+        done('should not resolve on error');
+      }).fail(function(err){
+        assert(err === 'error');
+        done();
+      });
+    });  
 });

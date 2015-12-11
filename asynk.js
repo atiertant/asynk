@@ -312,14 +312,14 @@ var Asynk = function () {
 
     Asynk.args = function () {
         args = utils.toArray(arguments);
-        _Context.currentTasks.forEach(function (currentTask) {
+        _Context.currentTasks.forEach(function(currentTask) {
             _Context.tasks[currentTask].args = utils.toArray(args);
         });
         return this;
     };
 
     Asynk.require = function (dependency) {
-        _Context.currentTasks.forEach(function (currentTask) {
+        _Context.currentTasks.forEach(function(currentTask) {
             var current = _Context.tasks[currentTask];
             current.dependencies.push(dependency);
         });
@@ -341,7 +341,7 @@ var Asynk = function () {
         return this;
     };
 
-    Asynk.serie = function (endcallArgs) {
+    Asynk.serie = function(endcallArgs) {
         _Context.exec = {
             fct: Asynk.serie,
             args: [endcallArgs]
@@ -352,19 +352,18 @@ var Asynk = function () {
         var currentId = 0;
 
         var cb = function (err, data) {
-            if (!err) {
-                _Context.tasks[currentId].status = DONE;
-                _Context.results.push(data);
-                currentId++;
-                next();
-            }
-            else {
+            if (err) {
                 _Context.tasks[currentId].status = FAIL;
-                defer.fail(err);
+                defer.reject(err);
                 endTask.fail(err);
+                return;
             }
+            _Context.tasks[currentId].status = DONE;
+            _Context.results.push(data);
+            currentId++;
+            next();
         };
-        var next = function () {
+        var next = function() {
             var current = _Context.tasks[currentId];
             if (current) {
                 current.setCallback(cb);
@@ -381,7 +380,7 @@ var Asynk = function () {
         return defer.promise(after);
     };
 
-    Asynk.parallel = function (endcallArgs) {
+    Asynk.parallel = function(endcallArgs) {
         _Context.exec = {
             fct: Asynk.parallel,
             args: [endcallArgs]
@@ -394,23 +393,22 @@ var Asynk = function () {
         var todo = _Context.tasks.length;
         var cb = function (task, err, data) {
             task.status = DONE;
-            if (!err) {
-                _Context.results[task.id] = data;
-                count++;
-                if (count >= todo) {
-                    endTask.execute();
-                }
-                else {
-                    _Context.tasks.forEach(function (task) {
-                        if (task.status === WAITING_FOR_DEPENDENCY) {
-                            task.execute();
-                        }
-                    });
-                }
+            if (err) {
+                defer.reject(err);
+                endTask.fail(err);
+                return;
+            }
+            _Context.results[task.id] = data;
+            count++;
+            if (count >= todo) {
+                endTask.execute();
             }
             else {
-                defer.fail(err);
-                endTask.fail(err);
+                _Context.tasks.forEach(function(task) {
+                    if (task.status === WAITING_FOR_DEPENDENCY) {
+                        task.execute();
+                    }
+                });
             }
         };
 
@@ -419,20 +417,20 @@ var Asynk = function () {
             return defer.promise();
         }
 
-        _Context.tasks.forEach(function (task) {
+        _Context.tasks.forEach(function(task) {
             task.setCallback(function (err, data) {
                 cb(task, err, data);
             });
         });
 
-        _Context.tasks.forEach(function (task) {
+        _Context.tasks.forEach(function(task) {
             task.execute();
         });
 
         return defer.promise(after);
     };
 
-    Asynk.parallelLimited = function (limit, endcallArgs) {
+    Asynk.parallelLimited = function(limit, endcallArgs) {
         _Context.exec = {
             fct: Asynk.parallelLimited,
             args: [limit, endcallArgs]
@@ -445,27 +443,26 @@ var Asynk = function () {
         var todo = _Context.tasks.length;
         var cb = function (task, err, data) {
             task.status = DONE;
-            if (!err) {
-                _Context.results[task.id] = data;
-                count++;
-                if (count >= todo) {
-                    endTask.execute();
-                }
-                else {
-                    _Context.tasks.forEach(function (task) {
-                        var stats = utils.countBy(_Context.tasks, function (task) {
-                            return task.status;
-                        });
-                        var running = stats[RUNNING] || 0;
-                        if ((running < limit) && (task.status < RUNNING)) {
-                            task.execute();
-                        }
-                    });
-                }
+            if (err) {
+                defer.reject(err);
+                endTask.fail(err);
+                return;
+            }
+            _Context.results[task.id] = data;
+            count++;
+            if (count >= todo) {
+                endTask.execute();
             }
             else {
-                defer.fail(err);
-                endTask.fail(err);
+                _Context.tasks.forEach(function(task) {
+                    var stats = utils.countBy(_Context.tasks, function(task) {
+                        return task.status;
+                    });
+                    var running = stats[RUNNING] || 0;
+                    if ((running < limit) && (task.status < RUNNING)) {
+                        task.execute();
+                    }
+                });
             }
         };
 
@@ -474,14 +471,14 @@ var Asynk = function () {
             return defer.promise();
         }
 
-        _Context.tasks.forEach(function (task) {
+        _Context.tasks.forEach(function(task) {
             task.setCallback(function (err, data) {
                 cb(task, err, data);
             });
         });
 
-        _Context.tasks.forEach(function (task) {
-            var stats = utils.countBy(_Context.tasks, function (task) {
+        _Context.tasks.forEach(function(task) {
+            var stats = utils.countBy(_Context.tasks, function(task) {
                 return task.status;
             });
             var running = stats[RUNNING] || 0;
@@ -497,14 +494,14 @@ var Asynk = function () {
 };
 
 module.exports = {
-    add: function (fct) {
+    add: function(fct) {
         return Asynk().add(fct);
     },
-    each: function (datas, fct) {
+    each: function(datas, fct) {
         return Asynk().each(datas, fct);
     },
     callback: new DefArg('callback'),
-    data: function (val) {
+    data: function(val) {
         if (utils.isString(val)) {
             return new DefArg('alias', val);
         }
@@ -516,10 +513,10 @@ module.exports = {
     fifo: function () {
         return new Fifo();
     },
-    progressive: function (start, step) {
+    progressive: function(start, step) {
         return new Progressive(start, step);
     },
-    deferred: function () {
+    deferred: function() {
         return new Deferred();
     },
     when: new Deferred().when

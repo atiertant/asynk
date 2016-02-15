@@ -53,7 +53,21 @@ describe('Deferred', function () {
             done();
         });
     });
-
+    it('Deferred notify(args) should execute promise progress(args)', function (done) {
+        var d1 = asynk.deferred();
+        var p1 = d1.promise();
+        var Notify = null;
+        var Obj = {};
+        p1.progress(function(notify) {
+          Notify = notify;
+        });
+        d1.notify(Obj);
+        d1.resolve();
+        p1.done(function() {
+          assert(Notify === Obj);
+          done();
+        });
+    });
     it('then should return a new promise and transform results', function (done) {
         var promiseOfPerson = asynk.deferred();
         var promiseOfName = promiseOfPerson.then(function (person) {

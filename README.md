@@ -126,7 +126,7 @@ arguments:
 	* **positive number:** require a selected task by absolute order of insertion starting by 0 (so 0 is the first,1 is the second...).
 	* **negative number:** require a selected task by a relative position (-1 is the first previous one).
 	* **string:** require a selected task named by alias(string) function.
-	* **array** an array of dependencies
+	* **array:** an array of dependencies
 
 ```javascript
 //create a first task

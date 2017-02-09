@@ -318,10 +318,13 @@ var Asynk = function () {
         return this;
     };
 
-    Asynk.require = function (dependency) {
+    Asynk.require = function (dependencies) {
+        if (!utils.isArray(dependencies)) {
+          dependencies = [dependencies];
+        }
         _Context.currentTasks.forEach(function(currentTask) {
             var current = _Context.tasks[currentTask];
-            current.dependencies.push(dependency);
+            current.dependencies = current.dependencies.concat(dependencies);
         });
         return this;
     };

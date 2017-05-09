@@ -311,7 +311,7 @@ var Asynk = function () {
     };
 
     Asynk.args = function () {
-        args = utils.toArray(arguments);
+        var args = utils.toArray(arguments);
         _Context.currentTasks.forEach(function(currentTask) {
             _Context.tasks[currentTask].args = utils.toArray(args);
         });

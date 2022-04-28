@@ -190,4 +190,11 @@ describe('Deferred', function() {
 
         d2.reject('ERROR');
     });
+
+    it('when should resolve if no argument passed', function(done) {
+        asynk.when().done(function() {
+            assert(arguments.length === 0);
+            done();
+        });
+    });
 });
